@@ -71,7 +71,7 @@
         'movie_id' => array('type' => '=', 'value' => $movie_id)
       )
     );
-    if($rating == false) {
+    if($rating === false) {
       return json_encode(array(
         'Message' => 'ERROR: DATABASE FETCH FAILED'
       ));

@@ -24,7 +24,7 @@
                 <h1 class="d-inline" id="modal-details-title">9th Company</h1>
               </span>
               <h5 id="modal-details-year">2005</h5>
-              <h5 class="mb-4" id="modal-details-genres">Action / Drama / History / War</h5>
+              <h5 class="mb-4" id="modal-details-genres"></h5>
               <span class="mb-4 d-flex flex-column align-items-center flex-lg-row align-items-center">
                 <span class="d-flex flex-row flex-lg-column justify-content-around col-12 col-lg-3 pr-lg-2 px-0">
                   <span class="col-6 col-sm-4 col-lg-12 p-0 mb-2 d-inline-flex d-lg-flex align-items-center justify-content-between">
@@ -72,6 +72,11 @@
                 </a>
               </div>
             </div>
+            <div class="col-12 order-lg-4">
+              <ul class="list-group list-group-flush border-0 rounded" id="modal-review-list">
+              </ul>
+              <button type="button" class="btn btn-info d-none" onclick="getReviews()" id="modal-review-load">Load More</button>
+            </div>
           </div>
         </div>
       </div>
@@ -82,6 +87,9 @@
 <script type="text/javascript">
   let current_movie = 0;
   let current_movie_rating = 0;
+  let review_page = 1;
+  let review_count = 5;
+  let upvotes = {};
 
   function get_user_rating() {
     return new Promise(function(resolve, reject) {
@@ -107,7 +115,6 @@
       let xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-          console.log(this.responseText);
           let response = JSON.parse(this.responseText);
           if(response.Message == 'SUCCESS') {
             resolve(response.Rating);
@@ -135,6 +142,207 @@
     xhttp.open("POST", "<?php echo BACKEND . 'get_rating.php';?>", true);
     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     xhttp.send('type=set&user=' + localStorage.getItem('JWT') + '&movie=' + current_movie + '&rating=' + current_movie_rating);
+  }
+
+  let getReviews = function() {
+    return new Promise(function(resolve, reject) {
+      let xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = async function() {
+        if (this.readyState == 4 && this.status == 200) {
+          await process_reviews(this.responseText);
+          resolve();
+        }
+      };
+      xhttp.open("POST", "<?php echo BACKEND . 'get_review.php';?>", true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhttp.send('type=get&movie=' + current_movie + '&page=' + review_page);
+    });
+  }
+
+  let getUserReview = function() {
+    return new Promise(function(resolve, reject) {
+      let xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = async function() {
+        if (this.readyState == 4 && this.status == 200) {
+          await process_user_review(this.responseText);
+          resolve();
+        }
+      };
+      xhttp.open("POST", "<?php echo BACKEND . 'get_review.php';?>", true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhttp.send('type=get&movie=' + current_movie + '&user=' + localStorage.getItem('JWT'));
+    });
+  }
+
+  let getUserVote = function(review_id) {
+    return new Promise(function(resolve, reject) {
+      let xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          let response = JSON.parse(this.responseText);
+          if(response.Message == 'SUCCESS') {
+            resolve(response.Vote);
+          } else {
+            resolve(0);
+          }
+        }
+      };
+      xhttp.open("POST", "<?php echo BACKEND . 'get_upvotes.php';?>", true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhttp.send('type=get&review=' + review_id + '&user=' + localStorage.getItem('JWT'));
+    });
+  }
+
+  let process_reviews = async function(json_response) {
+    let response = JSON.parse(json_response);
+    let review_list = document.querySelector('#modal-review-list');
+    if(response['Message'] == 'SUCCESS') {
+      for(let review of response['Reviews']) {
+        if(upvotes[review.id] == undefined) {
+          review_list.appendChild(await construct_review(review));
+        }
+      }
+      if(++review_page * review_count <= response['totalReviews']) {
+        document.querySelector('#modal-review-load').classList.remove('d-none');
+      } else {
+        document.querySelector('#modal-review-load').classList.add('d-none');
+      }
+    }
+  }
+
+  let process_user_review = async function(json_response) {
+    let response = JSON.parse(json_response);
+    let review_list = document.querySelector('#modal-review-list');
+    if(response['Message'] == 'SUCCESS') {
+      review_list.innerHTML = '<h5>Your Review</h5>';
+      review_list.appendChild(await construct_review(response['Review']));
+      review_list.appendChild(document.createElement('br'));
+    } else if (response['Message'] == 'NOT REVIEWED') {
+      review_list.innerHTML = '<textarea class="form-control" rows="4" placeholder="Review..." id="modal-review-input"></textarea><button type="button" class="btn btn-success" onclick="addReview()">Add Review</button>';
+    }
+    let h5 = document.createElement('h5');
+    h5.innerHTML = 'Reviews';
+    review_list.appendChild(h5);
+  }
+
+  let addReview = function() {
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        console.log(this.responseText);
+      }
+    };
+    xhttp.open("POST", "<?php echo BACKEND . 'get_review.php';?>", true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhttp.send(
+      'type=set&movie=' + current_movie +
+      '&user=' + localStorage.getItem('JWT') +
+      '&review=' + encodeURIComponent(document.querySelector('#modal-review-input').value)
+    );
+  }
+
+  let addVote = function(review_id, vote) {
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        console.log(this.responseText);
+      }
+    };
+    xhttp.open("POST", "<?php echo BACKEND . 'get_upvotes.php';?>", true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhttp.send(
+      'type=set' +
+      '&user=' + localStorage.getItem('JWT') +
+      '&review=' + review_id +
+      '&vote=' + vote
+    );
+  }
+
+  let voteReview = function(review_id, vote) {
+    let upvoteButton = document.querySelector('#upvote_' + review_id);
+    let downvoteButton = document.querySelector('#downvote_' + review_id);
+    let voteCount = document.querySelector('#vote_count_' + review_id);
+    upvoteButton.style.color = '#212529';
+    downvoteButton.style.color = '#212529';
+    if(upvotes[review_id] != undefined) {
+      voteCount.innerHTML = voteCount.innerHTML - upvotes[review_id];
+    }
+    if(upvotes[review_id] != undefined && upvotes[review_id] == vote) {
+      addVote(review_id, 0);
+      upvotes[review_id] = 0;
+
+    } else {
+      addVote(review_id, vote);
+      upvotes[review_id] = vote;
+      if(vote == 1) {
+        upvoteButton.style.color = '#FF8b60';
+        voteCount.innerHTML = parseInt(voteCount.innerHTML) + 1;
+      }
+      if(vote == -1) {
+        downvoteButton.style.color = '#9494FF';
+        voteCount.innerHTML = voteCount.innerHTML - 1;
+      }
+    }
+  }
+
+  let construct_review = async function(review) {
+    let li = document.createElement('li');
+    li.setAttribute('class', 'list-group-item list-group-item-dark d-flex flex-column');
+
+    let liHeader = document.createElement('span');
+    liHeader.setAttribute('class', 'd-flex justify-content-between');
+    liHeader.innerHTML = '<h5>' + review.username + '</h5>';
+    if(review.rating != 0) {
+      liHeader.innerHTML += '<h5>' + review.rating + '<i class="ml-2 fas fa-star"></i></h5>';
+    }
+    li.appendChild(liHeader);
+
+    let liBody = document.createElement('span');
+    liBody.setAttribute('class', 'text-justify');
+    liBody.innerHTML = review.review;
+    li.appendChild(liBody);
+
+    let liUpvotes = document.createElement('span');
+    liUpvotes.setAttribute('class', 'd-flex align-items-center');
+
+    let upvoteButton = document.createElement('button');
+    upvoteButton.setAttribute('type', 'button');
+    upvoteButton.setAttribute('class', 'btn fas fa-arrow-up vote-button');
+    upvoteButton.setAttribute('id', 'upvote_' + review.id);
+    upvoteButton.onclick = function() {
+      voteReview(review.id, 1);
+    }
+
+    let voteCount = document.createElement('span');
+    voteCount.setAttribute('id', 'vote_count_' + review.id);
+    voteCount.innerHTML = review.upvotes;
+
+    let downvoteButton = document.createElement('button');
+    downvoteButton.setAttribute('type', 'button');
+    downvoteButton.setAttribute('class', 'btn fas fa-arrow-down vote-button');
+    downvoteButton.setAttribute('id', 'downvote_' + review.id);
+    downvoteButton.onclick = function() {
+      voteReview(review.id, -1);
+    }
+
+    if(checkLogin()) {
+      let vote = await getUserVote(review.id);
+      upvotes[review.id] = vote;
+      if(vote == 1) {
+        upvoteButton.style.color = '#FF8b60';
+      }
+      if(vote == -1) {
+        downvoteButton.style.color = '#9494FF';
+      }
+    }
+
+    liUpvotes.appendChild(upvoteButton);
+    liUpvotes.appendChild(voteCount);
+    liUpvotes.appendChild(downvoteButton);
+
+    li.appendChild(liUpvotes);
+
+    return li;
   }
 
   let construct_item_thumb = function(item) {
@@ -183,8 +391,21 @@
       show_movie_details(item);
       document.querySelector('#modal-button').click();
     }
+
     viewButton.innerHTML = 'View More';
     posterHover.appendChild(viewButton);
+
+    if(typeof(edit_movie_details) == typeof(Function)) {
+      let editButton = document.createElement('button');
+      editButton.setAttribute('class', 'btn btn-info');
+      editButton.onclick = function() {
+        reset_movie_details();
+        edit_movie_details(item);
+        document.querySelector('#edit-modal-button').click();
+      }
+      editButton.innerHTML = 'Edit Item';
+      posterHover.appendChild(editButton);
+    }
 
     itemWrapper.appendChild(posterHover);
     outerContainer.appendChild(itemWrapper);
@@ -252,6 +473,7 @@
     current_movie = item.id;
 
     document.querySelector('#modal-details-title').innerHTML = item.title;
+    document.querySelector('#modal-details-genres').innerHTML = item.genres.split(',').join(' / ');
     document.querySelector('#modal-details-synopsis').innerHTML = item.synopsis;
     document.querySelector('#modal-details-year').innerHTML = item.year;
     document.querySelector('#modal-details-imdb-rating').innerHTML = item.imdb_rating;
@@ -274,6 +496,16 @@
     setRating(current_movie_rating);
 
     get_similar_movies();
+
+    document.querySelector('#modal-review-list').innerHTML = '';
+
+    review_page = 1;
+
+    upvotes = {};
+
+    await getUserReview();
+
+    await getReviews();
   }
 
   function generate_similar_movie_thumb(item) {

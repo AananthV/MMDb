@@ -7,7 +7,7 @@
   require_once($ROOT_PATH . '/helpers/jwt.php');
 
   function checkIfAdmin($jwt) {
-    $user_name = decodeJWT($jwt]);
+    $user_name = decodeJWT($jwt);
     if($user_name !== false) {
       $user_name = $user_name->data->username;
       return in_array($user_name, ADMINS);

@@ -4,6 +4,7 @@
   require_once($ROOT_PATH . '/helpers/database.php');
   require_once($ROOT_PATH . '/helpers/user.php');
   require_once($ROOT_PATH . '/helpers/jwt.php');
+  require_once($ROOT_PATH . '/helpers/rating.php');
 
   function addReview($user_id, $movie_id, $review) {
     // Validate Data.
@@ -63,21 +64,28 @@
     }
   }
 
-  function getReviews($movie_id, $user_id = null) {
+  function getReviews($movie_id, $page = 1, $count = 5) {
     $keys = array(
       'movie_id' => array('type' => '=', 'value' => $movie_id)
-    )
+    );
 
-    if(
-      !is_null($user_id)
-    ) {
-      $keys['user_id'] = array('type' => '=', 'value' => $user_id)
-    }
+    $limits = array(
+      'offset' => ($page - 1) * $count,
+      'count' => $count
+    );
+
+    $num_reviews = getValues(
+      'user_reviews',
+      array('count(*)'),
+      $keys
+    )[0]['count(*)'];
 
     $reviews = getValues(
       'user_reviews',
-      array('*'),
-      $keys
+      array('id', 'user_id', 'review'),
+      $keys,
+      null,
+      $limits
     );
 
     if($reviews === false) {
@@ -86,9 +94,50 @@
       ));
     }
 
+    for($i = 0; $i < count($reviews); $i++) {
+      $reviews[$i]['upvotes'] = getVotes($reviews[$i]['id']);
+      $reviews[$i]['username'] = getUsername($reviews[$i]['user_id']);
+      $reviews[$i]['rating'] = json_decode(getUserRating($reviews[$i]['user_id'], $movie_id))->Rating;
+    }
+
     return json_encode(array(
       'Message' => 'SUCCESS',
-      'Reivews' => $reviews
+      'totalReviews' => $num_reviews,
+      'Reviews' => $reviews
+    ));
+  }
+
+  function getUserReview($movie_id, $user_id) {
+    $keys = array(
+      'movie_id' => array('type' => '=', 'value' => $movie_id),
+      'user_id' => array('type' => '=', 'value' => $user_id)
+    );
+
+    $review = getValues(
+      'user_reviews',
+      array('id', 'user_id', 'review'),
+      $keys
+    );
+
+    if($review === false) {
+      return json_encode(array(
+        'Message' => 'ERROR: DATABASE FETCH FAILED'
+      ));
+    }
+
+    if(count($review) == 0) return json_encode(array(
+        'Message' => 'NOT REVIEWED'
+    ));
+
+    $review = $review[0];
+
+    $review['upvotes'] = getVotes($review['id']);
+    $review['username'] = getUsername($user_id);
+    $review['rating'] = json_decode(getUserRating($user_id, $movie_id))->Rating;
+
+    return json_encode(array(
+      'Message' => 'SUCCESS',
+      'Review' => $review
     ));
   }
 
@@ -96,9 +145,7 @@
     // Validate Data.
     if(
       !checkIfRowExists('users', array('id' => $user_id)) ||
-      !checkIfRowExists('user_reviews', array('id' => $review_id)) ||
-      !is_numeric($type) ||
-      !($type >= -1 && $type <= 1)
+      !checkIfRowExists('user_reviews', array('id' => $review_id))
     ) {
       return json_encode(array(
         'Message' => 'ERROR: INVALID DATA.'
@@ -123,7 +170,7 @@
     ) {
       $res = updateValues(
         'user_upvotes',
-        array('activity_id' => $activity_id, 'type' => intval($type)),
+        array('activity_id' => $activity_id, 'type' => $type),
         array('user_id' => $user_id, 'review_id' => $review_id)
       ) !== false;
     } else {
@@ -133,7 +180,7 @@
           'activity_id' => $activity_id,
           'user_id' => $user_id,
           'review_id' => $review_id,
-          'type' => intval($type)
+          'type' => $type
         )
       ) !== false;
     }
@@ -149,7 +196,7 @@
     }
   }
 
-  function getUserVote($user_id, $review_id) {
+  function getUserVote($review_id, $user_id) {
     $vote = getValues(
       'user_upvotes',
       array('type'),
@@ -196,10 +243,7 @@
       $upvotes += $vote['type'];
     }
 
-    return json_encode(array(
-      'Message' => 'SUCCESS',
-      'Upvotes' => $upvotes
-    ));
+    return $upvotes;
   }
 
 ?>

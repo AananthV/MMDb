@@ -21,7 +21,7 @@ def get_ratings():
     mycursor.execute(movie_data_query)
     movie_data = mycursor.fetchall()
     movie_ids = {movie_data[i][0]: i for i in range(len(movie_data))}
-    movie_data_matrix = np.zeros((len(movie_ids), len(genres)))
+    movie_data_matrix = np.zeros((len(movie_ids), len(genres)), dtype=np.int8)
     imdb_ratings = []
     for movie in movie_data:
         for genre in movie[1].split(','):

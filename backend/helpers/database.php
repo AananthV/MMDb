@@ -141,7 +141,8 @@
       $query->execute($params);
       return $query->fetchAll(PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      return false;
+      echo $sql;
+      throw new \PDOException($e->getMessage(), (int)$e->getCode());
     }
   }
 

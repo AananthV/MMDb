@@ -25,7 +25,7 @@
       ))
     );
 
-    if($retrievedValue !== false) {
+    if($retrievedValue !== false && count($retrievedValue) > 0) {
       $password_hashed = $retrievedValue[0]['password_hashed'];
       return password_verify($password, $password_hashed);
     } else {
@@ -40,6 +40,19 @@
         return false;
       } else {
         return $userId[0]['id'];
+      }
+    } else {
+      return false;
+    }
+  }
+
+  function getUsername($user_id) {
+    $username = getValues('users', array('username'), array('id' => array('type' => '=', 'value' => $user_id)));
+    if($username !== false) {
+      if(count($username) == 0) {
+        return false;
+      } else {
+        return $username[0]['username'];
       }
     } else {
       return false;

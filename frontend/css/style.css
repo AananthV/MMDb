@@ -1,6 +1,9 @@
 .cursor-pointer {
   cursor: pointer!important;
 }
+.vote-button:focus {
+  box-shadow: 0 0 0 0;
+}
 .border-danger {
   border-width: 2px!important;
   box-shadow: 0 0 0 0.1rem #dc354544!important;

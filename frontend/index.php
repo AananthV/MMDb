@@ -26,20 +26,27 @@
           </div>
         </div>
       </form>
-      <div id="item-container" class="row m-0">
-      </div>
-      <div id="recommendations" class="d-none">
-        <h3>Similar to movies you like</h3>
-        <div class="scrollable-div mb-2" id='recommendations-1'>
+      <div>
+        <h3>Latest Movies</h3>
+        <div class="scrollable-div mb-2" id='latest'>
           <button class="left-scrollbar"><</button>
-          <div id="recommendation-list-1" class="scroll-items">
+          <div id="latest-list" class="scroll-items">
           </div>
           <button class="right-scrollbar">></button>
         </div>
-        <h3>What others are seeing</h3>
-        <div class="scrollable-div" id='recommendations-0'>
+      </div>
+      <div id="recommendations" class="d-none">
+        <h3>Recommendations</h3>
+        <div class="scrollable-div mb-2" id='recommendations-0'>
           <button class="left-scrollbar"><</button>
           <div id="recommendation-list-0" class="scroll-items">
+          </div>
+          <button class="right-scrollbar">></button>
+        </div>
+        <h3>Similar to movies you liked</h3>
+        <div class="scrollable-div" id='recommendations-1'>
+          <button class="left-scrollbar"><</button>
+          <div id="recommendation-list-1" class="scroll-items">
           </div>
           <button class="right-scrollbar">></button>
         </div>
@@ -59,8 +66,8 @@
             item_thumb = construct_item_thumb(item);
             item_thumb.classList.add('scroll-item');
             itemList.appendChild(item_thumb);
-            let scrollable = new ScrollableDiv(document.querySelector('#recommendations-' + i));
           }
+          let scrollable = new ScrollableDiv(document.querySelector('#recommendations-' + i));
         }
       }
 
@@ -78,7 +85,32 @@
         xhttp.send('JWT=' + localStorage.getItem('JWT'));
       }
 
+      let process_latest_response = function(json_response) {
+        let itemList = document.querySelector('#latest-list');
+        let response = JSON.parse(json_response);
+        if(response['Response'] == 'True') {
+          for(let item of response['Search']) {
+            item_thumb = construct_item_thumb(item);
+            item_thumb.classList.add('scroll-item');
+            itemList.appendChild(item_thumb);
+          }
+          let scrollable = new ScrollableDiv(document.querySelector('#latest'));
+        }
+      }
+
+      let get_latest = function() {
+        let xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            process_latest_response(this.responseText);
+          }
+        };
+        xhttp.open("GET", "<?php echo BACKEND . 'search.php?sort_by=id&sort_order=DESC';?>", true);
+        xhttp.send();
+      }
+
       get_recommendations();
+      get_latest();
     </script>
 
     <script src="<?php echo $ROOT_PATH; ?>/helpers/scrollable_div.js" charset="utf-8"></script>

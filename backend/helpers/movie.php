@@ -3,29 +3,55 @@
 
   function addMovie($movie_data) {
     $res = true;
+    $movie_id = false;
+    $movie_data = (array) $movie_data;
+    $torrents = $movie_data['torrents'];
+    unset($movie_data['torrents']);
     if(
       checkIfRowExists('movie_data', array('imdb_code' => $movie_data['imdb_code']))
     ) {
-      $res = updateValues(
+      $movie_id = updateValues(
         'movie_data',
         $movie_data,
         array('imdb_code' => $movie_data['imdb_code'])
       ) !== false;
     } else {
-      $res = insertValues(
+      $movie_id = insertValues(
         'movie_data',
         $movie_data
       ) !== false;
     }
-    if($res) {
-      return json_encode(array(
-        'Message' => 'SUCCESS'
-      ));
-    } else {
-      return json_encode(array(
-        'Message' => 'ERROR: DATABASE INSERT FAILED'
+
+    if($movie_id === false) return json_encode(array(
+      'Message' => 'ERROR: DATABASE INSERT FAILED'
+    ));
+
+    $movie_id = json_decode(getMovieId($movie_data['imdb_code']))->MovieID;
+
+    $res = deleteValues(
+      'torrent_data',
+      array('movie_id' => $movie_id)
+    );
+
+    if($res === false) return json_encode(array(
+      'Message' => 'ERROR: DATABASE DELETE FAILED'
+    ));
+
+    foreach ($torrents as $torrent) {
+      $torrent = (array) $torrent;
+      $torrent['movie_id'] = $movie_id;
+      $res = insertValues(
+        'torrent_data',
+        $torrent
+      );
+      if($res === false) return json_encode(array(
+        'Message' => 'ERROR: DATABASE INSERT FAILED2'
       ));
     }
+
+    return json_encode(array(
+      'Message' => 'SUCCESS'
+    ));
   }
 
   function deleteMovie($id) {

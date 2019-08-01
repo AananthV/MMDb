@@ -50,7 +50,7 @@
     );
   }
 
-  $available_orders = array('year', 'title', 'runtime');
+  $available_orders = array('year', 'title', 'runtime', 'id');
   $available_order = array('ASC', 'DESC');
 
   if(
@@ -83,10 +83,6 @@
   if($num_results == 0) {
     $response['Response'] = 'False';
     $response['Error'] = 'No results found.';
-  }
-  else if($num_results > 400) {
-    $response['Response'] = 'False';
-    $response['Error'] = 'Too many results.';
   } else {
     $response['Response'] = 'True';
     $response['totalResults'] = $num_results;
