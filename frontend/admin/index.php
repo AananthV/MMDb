@@ -13,6 +13,23 @@
     <?php require_once($ROOT_PATH . '/elements/navbar.php'); ?>
     <?php require_once($ROOT_PATH . '/elements/auth.php'); ?>
 
+    <script type="text/javascript">
+      function checkAdmin() {
+        if(!checkLogin()) return false;
+        let xhttp = new XMLHttpRequest();
+        xhttp.open("POST", "<?php echo BACKEND . 'check_admin.php';?>", false);
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send('user=' + localStorage.getItem('JWT'));
+        let response = JSON.parse(xhttp.responseText);
+        if(response.Message == 'SUCCESS') {
+          return response.isAdmin;
+        }
+        return false;
+      }
+
+      if(!checkAdmin()) window.location = '<?php echo FRONTEND; ?>';
+    </script>
+
     <div class="container">
       <form id="search-form" class="my-2" oninput="search(this)" onsubmit="return false;">
         <div class="form-group">

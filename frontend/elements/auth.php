@@ -13,7 +13,7 @@
     document.querySelector('#login-button').click();
   }
   function toggle_auth_buttons() {
-    buttons = ['#logout-button', '#login-button', '#register-button'];
+    buttons = ['#logout-buttons', '#login-buttons'];
     for(let button of buttons) {
       for(let btn of document.querySelectorAll(button)) {
         btn.classList.toggle('d-none');

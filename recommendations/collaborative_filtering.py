@@ -6,6 +6,8 @@ import db_helper
 from sklearn.metrics.pairwise import pairwise_distances
 
 def collaborative_filtering():
+    print('Running collaborative_filtering...');
+    
     movie_ids, user_ids, movie_data, movie_ratings, ratings = db_helper.get_ratings();
 
     user_similarity = pairwise_distances(ratings, metric='cosine')

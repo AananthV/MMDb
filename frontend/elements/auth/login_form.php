@@ -49,9 +49,8 @@
           if(response.message == 'SUCCESS') {
             document.querySelector('#login-message').innerHTML = 'Login Successful';
             localStorage.setItem('JWT', response.jwt);
+            localStorage.setItem('username', response.username);
             location.reload();
-            toggle_auth_buttons();
-            closeAllModals();
           } else {
             document.querySelector('#login-message').innerHTML = 'Invalid Credentials';
             show_login_message();

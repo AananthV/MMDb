@@ -7,6 +7,13 @@
   $orders = array();
   $limit = array();
 
+  if(isset($_GET['id'])) {
+    $keys['id'] = array(
+      'type' => '=',
+      'value' => $_GET['id']
+    );
+  }
+
   if(isset($_GET['search'])) {
     foreach (explode(' ', $_GET['search']) as $search_term) {
       $keys['title'][] = array(

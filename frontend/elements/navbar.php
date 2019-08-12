@@ -18,8 +18,18 @@
       ?>
     </ul>
     <ul class="navbar-nav">
-      <button type="button" id="logout-button" class="btn btn-dark d-none" onclick="logout()">Log Out</button>
-      <div class="btn-group">
+      <div class="btn-group d-none" id="logout-buttons">
+        <button type="button" class="btn btn-dark" id="notifDropdownButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span id="notif-number" class="badge badge-light d-none">4</span><i id="notification-button" class="far fa-bell fa-lg"></i>
+        </button>
+        <div class="dropdown">
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notifDropdownButton">
+            <div id="notifDropdown"></div>
+          </div>
+        </div>
+        <button type="button" id="logout-button" class="btn btn-dark" onclick="logout()">Log Out</button>
+      </div>
+      <div class="btn-group" id="login-buttons">
         <button type="button" id="login-button" class="btn btn-dark" data-toggle="modal" data-target="#loginModal">Log In</button>
         <button type="button" id="register-button" class="btn btn-dark" data-toggle="modal" data-target="#registerModal">Register</button>
       </div>

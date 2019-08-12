@@ -41,7 +41,8 @@
       $jwt = JWT::encode($token, openssl_pkey_get_private(RSA_PRIVATE_KEY), 'RS256');
       return json_encode((object) array(
         'message' => 'SUCCESS',
-        'jwt' => $jwt
+        'jwt' => $jwt,
+        'username' => $login->username
       ));
     } else {
       return json_encode((object) array(

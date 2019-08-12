@@ -142,10 +142,17 @@
   }
 
   function addVote($user_id, $review_id, $type) {
+    $review_owner_id = getValues(
+      'user_reviews',
+      array('user_id', 'movie_id'),
+      array(
+        'id' => array('type' => '=', 'value' => $review_id)
+      )
+    );
     // Validate Data.
     if(
       !checkIfRowExists('users', array('id' => $user_id)) ||
-      !checkIfRowExists('user_reviews', array('id' => $review_id))
+      count($review_owner_id) == 0
     ) {
       return json_encode(array(
         'Message' => 'ERROR: INVALID DATA.'
@@ -159,7 +166,17 @@
       'user_activity',
       array(
         'user_id' => $user_id,
+        'movie_id' => $review_owner_id[0]['movie_id'],
         'type' => 2
+      )
+    );
+
+    // Add Notif
+    $notif_id = insertValues(
+      'user_notifications',
+      array(
+        'user_id' => $review_owner_id[0]['user_id'],
+        'activity_id' => $activity_id
       )
     );
 

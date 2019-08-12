@@ -14,6 +14,7 @@
   <body>
     <?php require_once($ROOT_PATH . '/elements/navbar.php'); ?>
     <?php require_once($ROOT_PATH . '/elements/auth.php'); ?>
+    <?php require_once($ROOT_PATH . '/elements/notifications.php'); ?>
 
     <div class="container">
       <form id="search-form" class="my-2" oninput="search(this)" onsubmit="return false;">

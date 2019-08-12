@@ -32,7 +32,7 @@
                     <span><span id="modal-details-imdb-rating" class="mr-2">7.1</span><i class="fas fa-star"></i></span>
                   </span>
                   <span class="col-6 col-sm-4 col-lg-12 p-0 mb-2 mb-lg-0 d-inline-flex d-lg-flex align-items-center justify-content-between">
-                    <img src="assets/imdb_logo.png" style="height:24px;" alt="">
+                    <span>MMDB</span>
                     <span><span id="modal-details-mmdb-rating" class="mr-2">7.1</span><i class="fas fa-star"></i></span>
                   </span>
                 </span>
@@ -215,8 +215,27 @@
     let review_list = document.querySelector('#modal-review-list');
     if(response['Message'] == 'SUCCESS') {
       review_list.innerHTML = '<h5>Your Review</h5>';
-      review_list.appendChild(await construct_review(response['Review']));
-      review_list.appendChild(document.createElement('br'));
+
+      let yourReview = document.createElement('div');
+      yourReview.setAttribute('id', 'yourReview');
+      yourReview.appendChild(await construct_review(response['Review']));
+      let editReviewButton = document.createElement('button');
+      editReviewButton.setAttribute('class', 'btn btn-info');
+      editReviewButton.innerHTML = 'Edit';
+      editReviewButton.onclick = function() {
+        document.querySelector('#yourReview').classList.add('d-none');
+        document.querySelector('#edit-review').classList.remove('d-none');
+        document.querySelector('#modal-review-input').value = response['Review'].review;
+      }
+      yourReview.appendChild(editReviewButton);
+
+      review_list.appendChild(yourReview);
+
+      let editReview = document.createElement('div');
+      editReview.setAttribute('class', 'd-none');
+      editReview.setAttribute('id', 'edit-review');
+      editReview.innerHTML = '<textarea class="form-control" rows="4" placeholder="Review..." id="modal-review-input"></textarea><button type="button" class="btn btn-success" onclick="addReview()">Edit Review</button>';
+      review_list.appendChild(editReview);
     } else if (response['Message'] == 'NOT REVIEWED') {
       review_list.innerHTML = '<textarea class="form-control" rows="4" placeholder="Review..." id="modal-review-input"></textarea><button type="button" class="btn btn-success" onclick="addReview()">Add Review</button>';
     }
@@ -229,7 +248,7 @@
     let xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-        console.log(this.responseText);
+        show_movie_by_id(current_movie);
       }
     };
     xhttp.open("POST", "<?php echo BACKEND . 'get_review.php';?>", true);
@@ -242,46 +261,54 @@
   }
 
   let addVote = function(review_id, vote) {
-    let xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        console.log(this.responseText);
-      }
-    };
-    xhttp.open("POST", "<?php echo BACKEND . 'get_upvotes.php';?>", true);
-    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    xhttp.send(
-      'type=set' +
-      '&user=' + localStorage.getItem('JWT') +
-      '&review=' + review_id +
-      '&vote=' + vote
-    );
+    if(checkLogin()) {
+      let xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          console.log(this.responseText);
+        }
+      };
+      xhttp.open("POST", "<?php echo BACKEND . 'get_upvotes.php';?>", true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhttp.send(
+        'type=set' +
+        '&user=' + localStorage.getItem('JWT') +
+        '&review=' + review_id +
+        '&vote=' + vote
+      );
+    } else {
+      document.querySelector('#login-button').click();
+    }
   }
 
   let voteReview = function(review_id, vote) {
-    let upvoteButton = document.querySelector('#upvote_' + review_id);
-    let downvoteButton = document.querySelector('#downvote_' + review_id);
-    let voteCount = document.querySelector('#vote_count_' + review_id);
-    upvoteButton.style.color = '#212529';
-    downvoteButton.style.color = '#212529';
-    if(upvotes[review_id] != undefined) {
-      voteCount.innerHTML = voteCount.innerHTML - upvotes[review_id];
-    }
-    if(upvotes[review_id] != undefined && upvotes[review_id] == vote) {
-      addVote(review_id, 0);
-      upvotes[review_id] = 0;
+    if(checkLogin()) {
+      let upvoteButton = document.querySelector('#upvote_' + review_id);
+      let downvoteButton = document.querySelector('#downvote_' + review_id);
+      let voteCount = document.querySelector('#vote_count_' + review_id);
+      upvoteButton.style.color = '#212529';
+      downvoteButton.style.color = '#212529';
+      if(upvotes[review_id] != undefined) {
+        voteCount.innerHTML = voteCount.innerHTML - upvotes[review_id];
+      }
+      if(upvotes[review_id] != undefined && upvotes[review_id] == vote) {
+        addVote(review_id, 0);
+        upvotes[review_id] = 0;
 
+      } else {
+        addVote(review_id, vote);
+        upvotes[review_id] = vote;
+        if(vote == 1) {
+          upvoteButton.style.color = '#FF8b60';
+          voteCount.innerHTML = parseInt(voteCount.innerHTML) + 1;
+        }
+        if(vote == -1) {
+          downvoteButton.style.color = '#9494FF';
+          voteCount.innerHTML = voteCount.innerHTML - 1;
+        }
+      }
     } else {
-      addVote(review_id, vote);
-      upvotes[review_id] = vote;
-      if(vote == 1) {
-        upvoteButton.style.color = '#FF8b60';
-        voteCount.innerHTML = parseInt(voteCount.innerHTML) + 1;
-      }
-      if(vote == -1) {
-        downvoteButton.style.color = '#9494FF';
-        voteCount.innerHTML = voteCount.innerHTML - 1;
-      }
+      document.querySelector('#login-button').click();
     }
   }
 
@@ -299,6 +326,7 @@
 
     let liBody = document.createElement('span');
     liBody.setAttribute('class', 'text-justify');
+    liBody.setAttribute('id', 'review_' + review.id);
     liBody.innerHTML = review.review;
     li.appendChild(liBody);
 
@@ -310,7 +338,22 @@
     upvoteButton.setAttribute('class', 'btn fas fa-arrow-up vote-button');
     upvoteButton.setAttribute('id', 'upvote_' + review.id);
     upvoteButton.onclick = function() {
-      voteReview(review.id, 1);
+      if(checkLogin()) {
+        voteReview(review.id, 1);
+        let userData = {
+          'type': 2,
+          'from': localStorage.getItem('username'),
+          'movie': current_movie
+        };
+        let notifData = {
+          'type': 'SEND',
+          'to_user': review.username,
+          'message': encodeURIComponent(JSON.stringify(userData))
+        };
+        socket.send(JSON.stringify(notifData));
+      } else {
+        document.querySelector('#login-button').click();
+      }
     }
 
     let voteCount = document.createElement('span');
@@ -322,7 +365,22 @@
     downvoteButton.setAttribute('class', 'btn fas fa-arrow-down vote-button');
     downvoteButton.setAttribute('id', 'downvote_' + review.id);
     downvoteButton.onclick = function() {
-      voteReview(review.id, -1);
+      if(checkLogin()) {
+        voteReview(review.id, -1);
+        let userData = {
+          'type': 0,
+          'from': localStorage.getItem('username'),
+          'movie': current_movie
+        };
+        let notifData = {
+          'type': 'SEND',
+          'to_user': review.username,
+          'message': encodeURIComponent(JSON.stringify(userData))
+        };
+        socket.send(JSON.stringify(notifData));
+      } else {
+        document.querySelector('#login-button').click();
+      }
     }
 
     if(checkLogin()) {
@@ -414,8 +472,12 @@
   }
 
   function toggleRating() {
-    document.querySelector('#rating-toggle').classList.toggle('d-flex');
-    document.querySelector('#rating-toggle').classList.toggle('d-none');
+    if(checkLogin()) {
+      document.querySelector('#rating-toggle').classList.toggle('d-flex');
+      document.querySelector('#rating-toggle').classList.toggle('d-none');
+    } else {
+      document.querySelector('#login-button').click();
+    }
   }
 
   function setRating(rating = 0) {
@@ -491,10 +553,6 @@
       downloadButtons.appendChild(downloadButton);
     }
 
-    current_movie_rating = await get_user_rating();
-
-    setRating(current_movie_rating);
-
     get_similar_movies();
 
     document.querySelector('#modal-review-list').innerHTML = '';
@@ -503,7 +561,13 @@
 
     upvotes = {};
 
-    await getUserReview();
+    if(checkLogin()) {
+      await getUserReview();
+
+      current_movie_rating = await get_user_rating();
+
+      setRating(current_movie_rating);
+    }
 
     await getReviews();
   }
@@ -550,5 +614,28 @@
       xhttp.open("GET", "<?php echo BACKEND;?>similar_movies.php?movie_id=" + current_movie, true);
       xhttp.send();
     });
+  }
+
+  function process_show_movie(json_response) {
+    let response = JSON.parse(json_response);
+    if(response['Response'] == 'True') {
+      let item = response['Search'][0];
+      show_movie_details(item);
+    }
+  }
+
+  function show_movie_by_id(id) {
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        process_show_movie(this.responseText);
+        let modal = document.querySelector('#detailsModal');
+        if(!modal.classList.contains('show')) {
+          document.querySelector('#modal-button').click();
+        }
+      }
+    };
+    xhttp.open("GET", '<?php echo BACKEND; ?>search.php?id=' + id, true);
+    xhttp.send();
   }
 </script>

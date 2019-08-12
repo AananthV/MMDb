@@ -83,7 +83,6 @@
         switch(this.responseText) {
           case 'SUCCESS':
             document.querySelector('#register-message').innerHTML = 'Register Successful';
-            location.reload();
             toggle_auth_buttons();
             closeAllModals();
             document.querySelector('#login-message').innerHTML = 'Registration Successful';

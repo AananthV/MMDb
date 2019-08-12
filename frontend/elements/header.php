@@ -8,9 +8,6 @@
 <!-- FontAwesome -->
 <script src="https://kit.fontawesome.com/cdf20ee219.js"></script>
 
-<!-- WebTorrent API -->
-<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
-
 <link rel="stylesheet" href="<?php echo $ROOT_PATH; ?>/css/style.css">
 
 <title><?php echo $currentPage ?></title>

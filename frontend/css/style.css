@@ -131,3 +131,34 @@ input:focus, select:focus {
 #rating-toggler:hover {
   cursor: pointer;
 }
+
+#notification-list {
+  position: fixed;
+  z-index: 9999;
+  top: 24px;
+  right: 24px;
+}
+
+@media only screen and (max-width: 576px) {
+  #notification-list {
+    left: 24px;
+  }
+}
+
+.notification {
+  -webkit-animation: fadeIn 0.5s;
+  animation: fadeIn 0.5s;
+}
+
+#notif-number {
+  position: absolute;
+  background: transparent;
+  font-size: 0.9em;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#loginModal, #registerModal {
+  z-index: 100001;
+}
